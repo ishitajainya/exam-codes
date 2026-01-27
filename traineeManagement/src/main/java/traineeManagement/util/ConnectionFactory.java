@@ -1,24 +1,46 @@
 package traineeManagement.util;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.Properties;
+import java.io.InputStream;
 
 public class ConnectionFactory {
 
-	private static Connection connection;
+    private static final Properties properties = new Properties();
 
-	public static Connection getConnection() {
-		try {
-			Class.forName("com.mysql.cj.jdbc.Driver");
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-		
-		try {
-			connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ymsli26", "root", "root");
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	
-		return connection;
-	}
+    static {
+        try (InputStream input =
+                     ConnectionFactory.class
+                             .getClassLoader()
+                             .getResourceAsStream("db.properties")) {
+
+            if (input == null) {
+                throw new RuntimeException("db.properties file not found");
+            }
+
+            properties.load(input);
+            Class.forName(properties.getProperty("jdbc.driver"));
+
+        } catch (Exception e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+
+    private ConnectionFactory() {
+    }
+
+    public static Connection getConnection() {
+        try {
+            return DriverManager.getConnection(
+                    properties.getProperty("jdbc.url"),
+                    properties.getProperty("jdbc.username"),
+                    properties.getProperty("jdbc.password")
+            );
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }
